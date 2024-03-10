@@ -1,0 +1,63 @@
+.commentItem {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.userAvatar {
+    width: 100%;
+    max-width: 68px;
+    height: 100%;
+    max-height: 68px;
+}
+
+.userCommentWrapper {
+    width: 100%;
+    max-width: 473px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.userCommentInfo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.userCommentNameWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.userCommentName {
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 137%;
+}
+
+.userActivity {
+    font-weight: 400;
+    font-size: 16px;
+    color: #8297ab;
+}
+
+.commentLikesCountWrapper {
+    display: flex;
+    gap: 8px;
+}
+
+.userCommentCount {
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 150%;
+    color: #fff;
+}
+
+.commentText {
+    font-weight: 400;
+    font-size: 16px;
+    color: #fff;
+}
