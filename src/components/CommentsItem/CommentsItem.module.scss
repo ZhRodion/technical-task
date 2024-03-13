@@ -13,7 +13,8 @@
 }
 
 .userAvatar {
-    width: 68px;
+    max-width: 68px;
+    min-width: 68px;
     height: 68px;
     border-radius: 50%;
     object-fit: cover;

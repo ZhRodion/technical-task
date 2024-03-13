@@ -1,83 +1,99 @@
-import {FC, useEffect, useState} from "react";
+import {FC, useLayoutEffect, useState} from "react";
 import getAuthorsRequest from "src/api/authors/getAuthorsRequest";
 import getCommentsRequest from "src/api/comments/getCommentsRequest";
 import CommentsItem from "../CommentsItem/CommentsItem";
 import styles from "./CommentsList.module.scss";
 
+interface Comment {
+    id: number;
+    avatar: string;
+    name: string;
+    created: string;
+    likes: number;
+    text: string;
+    nestedComments: Comment[];
+}
+
 const CommentsList: FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [comments, setComments] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [page, setPage] = useState<number>(1);
+    let [page, setPage] = useState<number>(1);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const fetchComments = async () => {
             try {
-                // Склейка результата промисов
+                // Параллельное выполнение промисов
                 const [authorsData, commentsData] = await Promise.all([
                     getAuthorsRequest(),
                     getCommentsRequest(page),
                 ]);
-
+                // Подбор автора по id
                 const authorsMap = authorsData.reduce(
                     (map: any, author: any) => {
                         map[author.id] = author;
                         return map;
                     },
-
                     {},
                 );
-
-                // Отсортировываем комментарии по parent
+                // Порядок сортировки
                 const sortedComments = commentsData.data.sort(
                     (a: any, b: any) => (a.parent || 0) - (b.parent || 0),
                 );
-
-                // Группируем дочерние комментарии по id родителя
-                const groupedComments: any = {};
-                sortedComments.forEach((comment: any) => {
-                    if (comment.parent !== null) {
-                        if (!groupedComments[comment.parent]) {
-                            groupedComments[comment.parent] = [];
-                        }
-                        groupedComments[comment.parent].push(comment);
-                    }
-                });
-
-                // Рекурсивная функция для получения вложенных комментариев
-                const getNestedComments: (
-                    comments: any[],
-                    parentId: number,
-                    authorData: any,
-                ) => any[] = (comments, parentId, authorData) => {
-                    return comments
-                        .filter((comment) => comment.parent === parentId)
-                        .map((comment) => ({
-                            ...comment,
-                            nestedComments: getNestedComments(
-                                comments,
-                                comment.id,
-                                authorData,
-                            ),
-                        }));
-                };
-
-                // Обрабатываем комментарии
-                const processedComments = sortedComments.map(
-                    (comment: any) => ({
+                // Приводим к формату Comment интерфейса
+                const processComment = (comment: any): Comment => {
+                    const processedComment: Comment = {
                         id: comment.id,
-                        avatar: authorsMap[comment.author].avatar,
-                        name: authorsMap[comment.author].name,
+                        avatar: authorsMap[comment.author]?.avatar || "",
+                        name: authorsMap[comment.author]?.name || "",
                         created: comment.created,
                         likes: comment.likes,
                         text: comment.text,
-                        nestedComments: getNestedComments(
-                            sortedComments,
-                            comment.id,
-                            authorsMap,
-                        ),
-                    }),
-                );
+                        nestedComments: [],
+                    };
+
+                    const nestedComments = getNestedComments(
+                        comment.id,
+                        sortedComments,
+                        authorsMap,
+                    );
+                    if (nestedComments.length > 0) {
+                        processedComment.nestedComments = nestedComments;
+                    }
+
+                    return processedComment;
+                };
+                // Рекурсией получаем вложенные комменты (проходится по всем комментам и добавляет вложенные к родительским)
+                const getNestedComments = (
+                    parentId: number,
+                    comments: any[],
+                    authorsMap: any,
+                ): Comment[] => {
+                    const nested: Comment[] = [];
+                    for (const comment of comments) {
+                        if (comment.parent === parentId) {
+                            nested.push({
+                                id: comment.id,
+                                avatar:
+                                    authorsMap[comment.author]?.avatar || "",
+                                name: authorsMap[comment.author]?.name || "",
+                                created: comment.created,
+                                likes: comment.likes,
+                                text: comment.text,
+                                nestedComments: getNestedComments(
+                                    comment.id,
+                                    comments,
+                                    authorsMap,
+                                ),
+                            });
+                        }
+                    }
+                    return nested;
+                };
+                // Фильтруем и возвращаем комменты
+                const processedComments = sortedComments
+                    .filter((comment: any) => !comment.parent)
+                    .map(processComment);
 
                 setComments((prevComments) => [
                     ...prevComments,
@@ -91,11 +107,7 @@ const CommentsList: FC = () => {
             }
         };
         fetchComments();
-    }, [page]);
-
-    const loadNextPage = () => {
-        setPage((prevPage) => prevPage + 1);
-    };
+    }, []);
 
     return (
         <div className={styles.commentsWrapper}>
@@ -119,11 +131,7 @@ const CommentsList: FC = () => {
                     ))
                 )}
             </div>
-            <button
-                className={styles.addMore}
-                onClick={loadNextPage}
-                type="button"
-            >
+            <button className={styles.addMore} type="button">
                 Загрузить еще
             </button>
         </div>
