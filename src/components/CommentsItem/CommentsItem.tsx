@@ -2,43 +2,55 @@ import {FC} from "react";
 import styles from "./CommentsItem.module.scss";
 
 interface CommentItemProps {
-    userAvatar: string;
-    userName: string;
-    userActivity: string;
-    likesCount: number;
-    userComment: string;
+    id: number;
+    avatar: string;
+    name: string;
+    created: string;
+    likes: number;
+    text: string;
+    nestedComments?: CommentItemProps[];
 }
 
 const CommentsItem: FC<CommentItemProps> = ({
-    userAvatar,
-    userName,
-    userActivity,
-    likesCount,
-    userComment,
+    avatar,
+    name,
+    created,
+    likes,
+    text,
+    nestedComments = [],
 }) => {
     return (
-        <div className={styles.commentItem}>
-            <img
-                className={styles.userAvatar}
-                src={userAvatar}
-                alt=".Аватар пользователя"
-            />
-            <div className={styles.userCommentWrapper}>
-                <div className={styles.userCommentInfo}>
-                    <div className={styles.userCommentNameWrapper}>
-                        <span className={styles.userCommentName}>
-                            {userName}
-                        </span>
-                        <p className={styles.userActivity}>{userActivity}</p>
+        <div className={styles.commentItemWrapper}>
+            <div className={styles.commentItem}>
+                <img
+                    className={styles.userAvatar}
+                    src={avatar}
+                    alt=".Аватар пользователя"
+                />
+                <div className={styles.userCommentWrapper}>
+                    <div className={styles.userCommentInfo}>
+                        <div className={styles.userCommentNameWrapper}>
+                            <span className={styles.userCommentName}>
+                                {name}
+                            </span>
+                            <p className={styles.userActivity}>{created}</p>
+                        </div>
+                        <div className={styles.commentLikesCountWrapper}>
+                            <span className={styles.userCommentCount}>
+                                {likes}
+                            </span>
+                        </div>
                     </div>
-                    <div className={styles.commentLikesCountWrapper}>
-                        <span className={styles.userCommentCount}>
-                            {likesCount}
-                        </span>
-                    </div>
+                    <p className={styles.commentText}>{text}</p>
                 </div>
-                <p className={styles.commentText}>{userComment}</p>
             </div>
+            {nestedComments.length > 0 && (
+                <div className={styles.nestedComments}>
+                    {nestedComments.map((item, index) => (
+                        <CommentsItem key={`${item.id} - ${index}`} {...item} />
+                    ))}
+                </div>
+            )}
         </div>
     );
 };

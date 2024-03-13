@@ -1,15 +1,22 @@
+.commentItemWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
 .commentItem {
     width: 100%;
+    max-width: 561px;
     display: flex;
     justify-content: space-between;
     gap: 20px;
 }
 
 .userAvatar {
-    width: 100%;
-    max-width: 68px;
-    height: 100%;
-    max-height: 68px;
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 .userCommentWrapper {
@@ -60,4 +67,10 @@
     font-weight: 400;
     font-size: 16px;
     color: #fff;
+}
+
+.nestedComments {
+    width: 100%;
+    max-width: 528px;
+    margin-left: auto;
 }
