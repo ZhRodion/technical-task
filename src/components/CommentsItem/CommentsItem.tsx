@@ -1,7 +1,6 @@
 import {FC} from "react";
 import styles from "./CommentsItem.module.scss";
-
-interface CommentItemProps {
+export interface CommentItemProps {
     id: number;
     avatar: string;
     name: string;

@@ -1,26 +1,17 @@
-import {FC, useLayoutEffect, useState} from "react";
+import {FC, useEffect, useState} from "react";
 import getAuthorsRequest from "src/api/authors/getAuthorsRequest";
 import getCommentsRequest from "src/api/comments/getCommentsRequest";
-import CommentsItem from "../CommentsItem/CommentsItem";
+import CommentsItem, {CommentItemProps} from "../CommentsItem/CommentsItem";
 import styles from "./CommentsList.module.scss";
-
-interface Comment {
-    id: number;
-    avatar: string;
-    name: string;
-    created: string;
-    likes: number;
-    text: string;
-    nestedComments: Comment[];
-}
 
 const CommentsList: FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [comments, setComments] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
     let [page, setPage] = useState<number>(1);
+    const [hasMoreComments, setHasMoreComments] = useState<boolean>(true);
 
-    useLayoutEffect(() => {
+    useEffect(() => {
         const fetchComments = async () => {
             try {
                 // Параллельное выполнение промисов
@@ -41,8 +32,8 @@ const CommentsList: FC = () => {
                     (a: any, b: any) => (a.parent || 0) - (b.parent || 0),
                 );
                 // Приводим к формату Comment интерфейса
-                const processComment = (comment: any): Comment => {
-                    const processedComment: Comment = {
+                const processComment = (comment: any): CommentItemProps => {
+                    const processedComment: CommentItemProps = {
                         id: comment.id,
                         avatar: authorsMap[comment.author]?.avatar || "",
                         name: authorsMap[comment.author]?.name || "",
@@ -68,8 +59,8 @@ const CommentsList: FC = () => {
                     parentId: number,
                     comments: any[],
                     authorsMap: any,
-                ): Comment[] => {
-                    const nested: Comment[] = [];
+                ): CommentItemProps[] => {
+                    const nested: CommentItemProps[] = [];
                     for (const comment of comments) {
                         if (comment.parent === parentId) {
                             nested.push({
@@ -88,6 +79,7 @@ const CommentsList: FC = () => {
                             });
                         }
                     }
+                    console.log(nested);
                     return nested;
                 };
                 // Фильтруем и возвращаем комменты
@@ -99,15 +91,22 @@ const CommentsList: FC = () => {
                     ...prevComments,
                     ...processedComments,
                 ]);
+
                 setLoading(false);
             } catch (error) {
-                console.error("Ошибка загрузки данных:", error);
-                setError("Ошибка загрузки");
-                setLoading(false);
+                // setError("Не удалось загрузить комментарии");
+                // setLoading(false);
+                // console.error("Ошибка загрузки данных:", error);
+                setHasMoreComments(false);
             }
         };
         fetchComments();
-    }, []);
+    }, [page]);
+
+    const handleSwitchCommentPage = () => {
+        setPage((page += 1));
+        console.log(page);
+    };
 
     return (
         <div className={styles.commentsWrapper}>
@@ -131,7 +130,12 @@ const CommentsList: FC = () => {
                     ))
                 )}
             </div>
-            <button className={styles.addMore} type="button">
+            <button
+                className={styles.addMore}
+                onClick={handleSwitchCommentPage}
+                disabled={!hasMoreComments}
+                type="button"
+            >
                 Загрузить еще
             </button>
         </div>
