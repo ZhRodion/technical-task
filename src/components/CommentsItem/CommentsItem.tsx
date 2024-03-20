@@ -35,6 +35,11 @@ const CommentsItem: FC<CommentItemProps> = ({
                             <p className={styles.userActivity}>{created}</p>
                         </div>
                         <div className={styles.commentLikesCountWrapper}>
+                            <img
+                                className={styles.userLikePic}
+                                src="/comments-page/empty-heart.svg"
+                                alt=".Лайк"
+                            />
                             <span className={styles.userCommentCount}>
                                 {likes}
                             </span>
