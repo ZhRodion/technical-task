@@ -8,10 +8,15 @@ import styles from "./CommentsList.module.scss";
 
 const CommentsList: FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
+    // Обновление массива комментов
     const [comments, setComments] = useState<any[]>([]);
+    // Есть ли ошибка
     const [error, setError] = useState<string | null>(null);
+    // Переключение страницы
     let [page, setPage] = useState<number>(1);
+    // Есть ли еще комменты
     const [hasMoreComments, setHasMoreComments] = useState<boolean>(true);
+    // Повтор
     const [retryCount, setRetryCount] = useState(0);
 
     useEffect(() => {
@@ -70,11 +75,13 @@ const CommentsList: FC = () => {
                     authorsMap: any,
                 ): CommentItemProps[] => {
                     const nested: CommentItemProps[] = [];
+                    // Если comments перебраны - остановка рекурсии
                     for (const comment of comments) {
                         // Перевод в корректный формат времени при помощи time.js lib
                         const formattedCreated = moment(comment.created).format(
                             "DD MMMM YYYY HH:mm",
                         );
+                        // Если нет вложенных комментов - рекурсия останавливается
                         if (comment.parent === parentId) {
                             nested.push({
                                 id: comment.id,
@@ -100,7 +107,7 @@ const CommentsList: FC = () => {
                 const processedComments = sortedComments
                     .filter((comment: any) => !comment.parent)
                     .map(processComment);
-
+                // Обновляем комменты
                 setComments((prevComments) => [
                     ...prevComments,
                     ...processedComments,
@@ -108,7 +115,7 @@ const CommentsList: FC = () => {
 
                 setLoading(false);
             } catch (error: any) {
-                // Если страницы в бд кончились
+                // Если страницы в бд кончились страницы
                 if (error.response?.status === 404) {
                     setError("Комментарии закончились");
                     setLoading(false);
@@ -124,6 +131,7 @@ const CommentsList: FC = () => {
         };
         fetchComments();
     }, [page]);
+    // Переключение страницы
     const handleSwitchCommentPage = () => {
         setPage((page += 1));
         // console.log(page);
