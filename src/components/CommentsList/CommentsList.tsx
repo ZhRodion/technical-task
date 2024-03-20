@@ -3,6 +3,7 @@ import {FC, useEffect, useState} from "react";
 import getAuthorsRequest from "src/api/authors/getAuthorsRequest";
 import getCommentsRequest from "src/api/comments/getCommentsRequest";
 import CommentsItem, {CommentItemProps} from "../CommentsItem/CommentsItem";
+import Spinner from "../Spinner/Spinner";
 import styles from "./CommentsList.module.scss";
 
 const CommentsList: FC = () => {
@@ -132,7 +133,7 @@ const CommentsList: FC = () => {
         <div className={styles.commentsWrapper}>
             <div className={styles.commentsList}>
                 {loading ? (
-                    <p>Загрузка...</p>
+                    <Spinner />
                 ) : (
                     comments.map((item, index) => (
                         <CommentsItem
