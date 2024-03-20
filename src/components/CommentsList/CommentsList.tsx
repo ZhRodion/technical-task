@@ -1,3 +1,4 @@
+import moment from "moment";
 import {FC, useEffect, useState} from "react";
 import getAuthorsRequest from "src/api/authors/getAuthorsRequest";
 import getCommentsRequest from "src/api/comments/getCommentsRequest";
@@ -10,6 +11,7 @@ const CommentsList: FC = () => {
     const [error, setError] = useState<string | null>(null);
     let [page, setPage] = useState<number>(1);
     const [hasMoreComments, setHasMoreComments] = useState<boolean>(true);
+    const [retryCount, setRetryCount] = useState(0);
 
     useEffect(() => {
         const fetchComments = async () => {
@@ -31,23 +33,29 @@ const CommentsList: FC = () => {
                 const sortedComments = commentsData.data.sort(
                     (a: any, b: any) => (a.parent || 0) - (b.parent || 0),
                 );
-                // Приводим к формату Comment интерфейса
+                // Приводим к формату Comment интерфейса и рекурсией собираем комменеты рекурсией
                 const processComment = (comment: any): CommentItemProps => {
+                    // Перевод в корректный формат времени при помощи time.js lib
+                    const formattedCreated = moment(comment.created).format(
+                        "DD MMMM YYYY HH:mm",
+                    );
                     const processedComment: CommentItemProps = {
                         id: comment.id,
                         avatar: authorsMap[comment.author]?.avatar || "",
                         name: authorsMap[comment.author]?.name || "",
-                        created: comment.created,
+                        // Вставка времени в формате день-месяц-год-час
+                        created: formattedCreated,
                         likes: comment.likes,
                         text: comment.text,
                         nestedComments: [],
                     };
-
+                    // Если длинна вложенных комментов >0 - собираем комменты вложенные
                     const nestedComments = getNestedComments(
                         comment.id,
                         sortedComments,
                         authorsMap,
                     );
+                    // Когда = 0, остановка рекурсии
                     if (nestedComments.length > 0) {
                         processedComment.nestedComments = nestedComments;
                     }
@@ -62,13 +70,18 @@ const CommentsList: FC = () => {
                 ): CommentItemProps[] => {
                     const nested: CommentItemProps[] = [];
                     for (const comment of comments) {
+                        // Перевод в корректный формат времени при помощи time.js lib
+                        const formattedCreated = moment(comment.created).format(
+                            "DD MMMM YYYY HH:mm",
+                        );
                         if (comment.parent === parentId) {
                             nested.push({
                                 id: comment.id,
                                 avatar:
                                     authorsMap[comment.author]?.avatar || "",
                                 name: authorsMap[comment.author]?.name || "",
-                                created: comment.created,
+                                // Вставка времени в формате день-месяц-год-час
+                                created: formattedCreated,
                                 likes: comment.likes,
                                 text: comment.text,
                                 nestedComments: getNestedComments(
@@ -79,7 +92,7 @@ const CommentsList: FC = () => {
                             });
                         }
                     }
-                    console.log(nested);
+                    // console.log(nested);
                     return nested;
                 };
                 // Фильтруем и возвращаем комменты
@@ -93,19 +106,26 @@ const CommentsList: FC = () => {
                 ]);
 
                 setLoading(false);
-            } catch (error) {
-                // setError("Не удалось загрузить комментарии");
-                // setLoading(false);
-                // console.error("Ошибка загрузки данных:", error);
-                setHasMoreComments(false);
+            } catch (error: any) {
+                // Если страницы в бд кончились
+                if (error.response?.status === 404) {
+                    setError("Комментарии закончились");
+                    setLoading(false);
+                    setHasMoreComments(false);
+                    console.error("Ошибка загрузки данных:", error);
+                    // Если выдает ошибку соединения с бд
+                } else if (retryCount < 3) {
+                    setRetryCount(retryCount + 1);
+                    console.log("Повторный запрос...");
+                    fetchComments();
+                }
             }
         };
         fetchComments();
     }, [page]);
-
     const handleSwitchCommentPage = () => {
         setPage((page += 1));
-        console.log(page);
+        // console.log(page);
     };
 
     return (
@@ -113,8 +133,6 @@ const CommentsList: FC = () => {
             <div className={styles.commentsList}>
                 {loading ? (
                     <p>Загрузка...</p>
-                ) : error ? (
-                    <p>{error}</p>
                 ) : (
                     comments.map((item, index) => (
                         <CommentsItem
@@ -138,6 +156,7 @@ const CommentsList: FC = () => {
             >
                 Загрузить еще
             </button>
+            {error ? <p className={styles.errText}>{error}</p> : ""}
         </div>
     );
 };
